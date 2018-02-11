@@ -17,6 +17,33 @@
       list-style-type: none;
       padding-left: 15px;
 
+      i.octicon.caret {
+        font-family: 'Octicons Regular';
+        font-weight: normal;
+        font-style: normal;
+        display: inline-block;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        text-decoration: none;
+        font-size: 12px;
+        width: 12px;
+        height: 12px;
+        border-top: none;
+        cursor: pointer;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      i.octicon.chevron-down::before {
+        content: "\f0a3";
+      }
+
+      i.octicon.chevron-right::before {
+        content: "\f078";
+      }
+
       li.subsubsection {
         font-size: @font-size;
       }
