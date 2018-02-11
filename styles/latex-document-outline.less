@@ -5,4 +5,33 @@
 @import "ui-variables";
 
 .latex-document-outline {
+  .message {
+    white-space: nowrap;
+    overflow: auto;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    ul {
+      list-style-type: none;
+      padding-left: 15px;
+
+      li.subsubsection {
+        font-size: @font-size;
+      }
+      li.subsection {
+        font-size: @font-size * 1.1;
+      }
+      li.section {
+        font-size: @font-size * 1.2;
+      }
+      li.chapter {
+        font-size: @font-size * 1.3;
+      }
+      li.part {
+        font-size: @font-size * 1.5;
+      }
+    }
+  }
 }

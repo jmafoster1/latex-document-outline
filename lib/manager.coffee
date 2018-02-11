@@ -3,12 +3,22 @@ fs = require 'fs'
 path = require 'path'
 chokidar = require 'chokidar'
 
+getAllInstances = (searchStr, str) ->
+  regex = searchStr
+  result = undefined
+  indices = []
+  indices = []
+  while result = regex.exec(str)
+    indices.push result
+  indices
+
 module.exports =
 class Manager extends Disposable
   constructor: (latex) ->
     @latex = latex
     @disable_watcher = atom.config.get "atom-latex.disable_watcher"
     @watched = []
+
   rootDir: ->
     # Collect all open TextEditors with LaTeX grammar
     texEditors = (editor for editor in atom.workspace.getTextEditors()\
@@ -23,6 +33,70 @@ class Manager extends Disposable
           text: "No active TeX editors were open - Setting Project: #{atom.project.getPaths()[0]}"
         }
       return atom.project.getPaths()[0]
+
+  getStructure:(file)->
+    return this.getStructureAux(file, [], {part:0, chapter:0, section:0, subsection:0, subsubsection:0})
+
+  getStructureAux:(file, structure, counts)->
+    text = fs.readFileSync(file, 'utf8')
+    inputReg = /(?:\\(?:input|include|subfile)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/g
+    chapterReg = /\\((?:part|chapter|section|subsection|subsubsection|input|include|subfile))(?:\*?){(([\s\S])*?)}/g
+    for i in getAllInstances(chapterReg, text)
+      if inputReg.test(i[0])
+        inputFile = i[2]
+        if path.extname(inputFile) == ''
+          inputFile += '.tex'
+        structure = this.getStructureAux(path.join(@latex.homeDir,inputFile), structure, counts)
+      else
+        counts[i[1]] += 1
+
+        line = i.input.substring(0, i.index).split(/\r\n|\r|\n/).length;
+
+        # parts
+        structure.parts = if structure.parts then structure.parts else []
+        structure.parts[counts.part] = if structure.parts[counts.part] then structure.parts[counts.part] else []
+
+        if i[1] == 'subsubsection' || i[1] == 'subsection' || i[1] == 'section' || i[1] == 'chapter'
+          # chapters
+          structure.parts[counts.part].chapters = if structure.parts[counts.part].chapters then structure.parts[counts.part].chapters else []
+          structure.parts[counts.part].chapters[counts.chapter] = if structure.parts[counts.part].chapters[counts.chapter] then structure.parts[counts.part].chapters[counts.chapter] else []
+
+        if i[1] == 'subsubsection' || i[1] == 'subsection' || i[1] == 'section'
+          # sections
+          structure.parts[counts.part].chapters[counts.chapter].sections = if structure.parts[counts.part].chapters[counts.chapter].sections then structure.parts[counts.part].chapters[counts.chapter].sections else []
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] else []
+
+        if i[1] == 'subsubsection' || i[1] == 'subsection'
+          # subsections
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections else []
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] else []
+
+        if i[1] == 'subsubsection'
+          # subsubsections
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections else []
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] else []
+
+        if i[1] == 'part'
+          structure.parts[counts.part].title = i[2]
+          structure.parts[counts.part].file = file
+          structure.parts[counts.part].line = line
+        if i[1] == 'chapter'
+          structure.parts[counts.part].chapters[counts.chapter].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].file = file
+          structure.parts[counts.part].chapters[counts.chapter].line = line
+        if i[1] == 'section'
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].file = file
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].line = line
+        if i[1] == 'subsection'
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].file = file
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].line = line
+        if i[1] == 'subsubsection'
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].file = file
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].line = line
+    return structure
 
   loadLocalCfg: ->
     if @lastCfgTime? and Date.now() - @lastCfgTime < 200 or\
@@ -101,7 +175,7 @@ class Manager extends Disposable
     if currentPath and currentContent
       if @isTexFile(currentPath) and currentContent.match(docRegex)
         @latex.mainFile = currentPath
-        @latex.logger.setMain('self')
+        # @latex.logger.setMain('self')
         return true
     return false
 
@@ -116,7 +190,7 @@ class Manager extends Disposable
         result = currentContent.match magicRegex
         if result
           @latex.mainFile = path.resolve(path.dirname(currentPath), result[1])
-          @latex.logger.setMain('magic')
+          # @latex.logger.setMain('magic')
           return true
     return false
 
@@ -124,7 +198,7 @@ class Manager extends Disposable
     @loadLocalCfg()
     if @config?.root
       @latex.mainFile = @config.root
-      @latex.logger.setMain('config')
+      # @latex.logger.setMain('config')
       return true
     return false
 
@@ -137,7 +211,7 @@ class Manager extends Disposable
         fileContent = fs.readFileSync filePath, 'utf-8'
         if fileContent.match docRegex
           @latex.mainFile = filePath
-          @latex.logger.setMain('all')
+          # @latex.logger.setMain('all')
           return true
     return false
 
