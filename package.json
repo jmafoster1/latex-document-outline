@@ -1,0 +1,23 @@
+{
+  "name": "latex-document-outline",
+  "main": "./lib/latex-document-outline",
+  "version": "0.0.0",
+  "description": "A short description of your package",
+  "keywords": [],
+  "activationCommands": {
+    "atom-workspace": "latex-document-outline:toggle"
+  },
+  "repository": "https://github.com/atom/latex-document-outline",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "chokidar": "^2.0.1",
+    "fs": "0.0.1-security",
+    "path": "^0.12.7"
+  },
+  "deserializers": {
+    "latex-document-outline/LatexDocumentOutlineView": "deserializeLatexDocumentOutlineView"
+  }
+}

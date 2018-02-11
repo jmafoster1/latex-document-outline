@@ -1,0 +1,26 @@
+{
+  "context-menu": {
+    "atom-text-editor": [
+      {
+        "label": "Toggle latex-document-outline",
+        "command": "latex-document-outline:toggle"
+      }
+    ]
+  },
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "latex-document-outline",
+          "submenu": [
+            {
+              "label": "Toggle",
+              "command": "latex-document-outline:toggle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
