@@ -34,10 +34,7 @@ class Manager extends Disposable
         }
       return atom.project.getPaths()[0]
 
-  getStructure:(file)->
-    return this.getStructureAux(file, [], {part:0, chapter:0, section:0, subsection:0, subsubsection:0})
-
-  getStructureAux:(file, structure, counts)->
+  getStructure:(file, structure, counts)->
     text = fs.readFileSync(file, 'utf8')
     inputReg = /(?:\\(?:input|include|subfile)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/g
     chapterReg = /\\((?:part|chapter|section|subsection|subsubsection|input|include|subfile))(?:\*?){(([\s\S])*?)}/g
@@ -46,56 +43,56 @@ class Manager extends Disposable
         inputFile = i[2]
         if path.extname(inputFile) == ''
           inputFile += '.tex'
-        structure = this.getStructureAux(path.join(@latex.homeDir,inputFile), structure, counts)
+        structure = this.getStructure(path.join(@latex.homeDir,inputFile), structure, counts)
       else
         counts[i[1]] += 1
-
         line = i.input.substring(0, i.index).split(/\r\n|\r|\n/).length;
 
         # parts
         structure.parts = if structure.parts then structure.parts else []
-        structure.parts[counts.part] = if structure.parts[counts.part] then structure.parts[counts.part] else []
-
+        structure.parts[counts.part] = if structure.parts[counts.part] then structure.parts[counts.part] else {}
+        # chapters
         if i[1] == 'subsubsection' || i[1] == 'subsection' || i[1] == 'section' || i[1] == 'chapter'
-          # chapters
           structure.parts[counts.part].chapters = if structure.parts[counts.part].chapters then structure.parts[counts.part].chapters else []
-          structure.parts[counts.part].chapters[counts.chapter] = if structure.parts[counts.part].chapters[counts.chapter] then structure.parts[counts.part].chapters[counts.chapter] else []
-
+          structure.parts[counts.part].chapters[counts.chapter] = if structure.parts[counts.part].chapters[counts.chapter] then structure.parts[counts.part].chapters[counts.chapter] else {}
+        # sections
         if i[1] == 'subsubsection' || i[1] == 'subsection' || i[1] == 'section'
-          # sections
           structure.parts[counts.part].chapters[counts.chapter].sections = if structure.parts[counts.part].chapters[counts.chapter].sections then structure.parts[counts.part].chapters[counts.chapter].sections else []
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] else []
-
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section] else {}
+        # subsections
         if i[1] == 'subsubsection' || i[1] == 'subsection'
-          # subsections
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections else []
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] else []
-
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection] else {}
+        # subsubsections
         if i[1] == 'subsubsection'
-          # subsubsections
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections else []
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] else []
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] else {}
 
         if i[1] == 'part'
           structure.parts[counts.part].title = i[2]
           structure.parts[counts.part].file = file
           structure.parts[counts.part].line = line
+          structure.parts[counts.part].index = "#{counts.part}"
         if i[1] == 'chapter'
           structure.parts[counts.part].chapters[counts.chapter].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].file = file
           structure.parts[counts.part].chapters[counts.chapter].line = line
+          structure.parts[counts.part].chapters[counts.chapter].index = "#{counts.part}-#{counts.chapter}"
         if i[1] == 'section'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].line = line
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].index = "#{counts.part}-#{counts.chapter}-#{counts.section}"
         if i[1] == 'subsection'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].line = line
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}"
         if i[1] == 'subsubsection'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].line = line
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}-#{counts.subsubsection}"
     return structure
 
   loadLocalCfg: ->
