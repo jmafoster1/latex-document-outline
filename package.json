@@ -2,12 +2,12 @@
   "name": "latex-document-outline",
   "main": "./lib/latex-document-outline",
   "version": "0.0.0",
-  "description": "A short description of your package",
+  "description": "Displays an outline of latex documents",
   "keywords": [],
   "activationCommands": {
     "atom-workspace": "latex-document-outline:toggle"
   },
-  "repository": "https://github.com/atom/latex-document-outline",
+  "repository": "https://github.com/aca13jmf/latex-document-outline",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
