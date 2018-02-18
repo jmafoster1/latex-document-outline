@@ -1,7 +1,7 @@
 {
   "name": "latex-document-outline",
   "main": "./lib/latex-document-outline",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Displays an outline of latex documents",
   "keywords": [],
   "activationCommands": {
