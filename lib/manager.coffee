@@ -12,6 +12,47 @@ getAllInstances = (searchStr, str) ->
     indices.push result
   indices
 
+checkNested = (obj) ->
+  args = Array::slice.call(arguments, 1)
+  i = 0
+  while i < args.length
+    if !obj or !obj.hasOwnProperty(args[i])
+      return false
+    obj = obj[args[i]]
+    i++
+  true
+
+incrementCounts = (counts, count, structure) ->
+  counts[count] += 1
+  switch count
+    when 'part'
+      if checkNested(structure, "parts", counts.part, "chapters")
+        structure.parts[counts.part].chapters = structure.parts[counts.part].chapters.slice(0, counts.chapter)
+      counts['chapter'] = 0
+      counts['section'] = 0
+      counts['subsection'] = 0
+      counts['subsubsection'] = 0
+      break
+    when 'chapter'
+      if checkNested(structure, "parts", counts.part, "chapters", counts.chapter, "sections")
+        structure.parts[counts.part].chapters[counts.chapter].sections = structure.parts[counts.part].chapters[counts.chapter].sections.slice(0, counts.section)
+      counts['section'] = 0
+      counts['subsection'] = 0
+      counts['subsubsection'] = 0
+      break
+    when 'section'
+      if checkNested(structure, "parts", counts.part, "chapters", counts.chapter, "sections", counts.section, "subsections")
+        structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections = structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections.slice(0, counts.section)
+      counts['subsection'] = 0
+      counts['subsubsection'] = 0
+      break
+    when 'subsection'
+      if checkNested(structure, "parts", counts.part, "chapters", counts.chapter, "sections", counts.section, "subsections", counts.subsection, "subsubsections")
+        structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections = structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections.slice(0, counts.section)
+      counts['subsubsection'] = 0
+      break
+  return counts
+
 module.exports =
 class Manager extends Disposable
   constructor: (latex) ->
@@ -45,7 +86,7 @@ class Manager extends Disposable
           inputFile += '.tex'
         structure = this.getStructure(path.join(@latex.homeDir,inputFile), structure, counts)
       else
-        counts[i[1]] += 1
+        incrementCounts(counts, i[1], structure)
         line = i.input.substring(0, i.index).split(/\r\n|\r|\n/).length;
 
         # parts
