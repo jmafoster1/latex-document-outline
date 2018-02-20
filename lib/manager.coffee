@@ -72,6 +72,7 @@ class Manager extends Disposable
     chapterReg = /(?:\\(part|chapter|section|subsection|subsubsection)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/
     for line, lineNo in text.split(/\r?\n/)
       line = line.trim()
+      lineNo++
       if line == "" || line.startsWith("%")
         continue
       f = inputReg.exec(line)
