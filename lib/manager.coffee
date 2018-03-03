@@ -66,6 +66,26 @@ class Manager extends Disposable
         }
       return atom.project.getPaths()[0]
 
+  getFigures: (text, startLine) ->
+    chapterReg = /(?:\\(part|chapter|section|subsection|subsubsection)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/
+    figures = []
+    searchText = []
+    for line, lineNo in text.split(/\r?\n/).slice(startLine)
+      if !chapterReg.test(line)
+        searchText.push(line)
+      else
+        break
+    searchText = searchText.join("\n")
+    figureReg = /\\begin{(figure|table|algorithm)}(?:[\s\S]*?)(?:\\caption(?:\[([^\[\]\{\}]*)\])?){([^}]*)}(?:[\s\S]*?)\\end{\1}/g
+
+    while (m = figureReg.exec(searchText))
+        if m
+          m.line = startLine + searchText.slice(0, m.index).split(/\r?\n/).length
+          m.title = if m[2] then m[2] else m[3]
+          m.type = m[1]
+          figures.push(m)
+    return figures
+
   getStructure:(file, structure, counts)->
     text = fs.readFileSync(file, 'utf8')
     inputReg = /(?:\\(?:input|include|subfile)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/
@@ -110,26 +130,31 @@ class Manager extends Disposable
           structure.parts[counts.part].file = file
           structure.parts[counts.part].line = lineNo
           structure.parts[counts.part].index = "#{counts.part}"
+          structure.parts[counts.part].figures = this.getFigures(text, lineNo)
         if i[1] == 'chapter'
           structure.parts[counts.part].chapters[counts.chapter].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].file = file
           structure.parts[counts.part].chapters[counts.chapter].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].index = "#{counts.part}-#{counts.chapter}"
+          structure.parts[counts.part].chapters[counts.chapter].figures = this.getFigures(text, lineNo)
         if i[1] == 'section'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].index = "#{counts.part}-#{counts.chapter}-#{counts.section}"
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].figures = this.getFigures(text, lineNo)
         if i[1] == 'subsection'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}"
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].figures = this.getFigures(text, lineNo)
         if i[1] == 'subsubsection'
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].title = i[2]
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}-#{counts.subsubsection}"
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].figures = this.getFigures(text, lineNo)
     return structure
 
   loadLocalCfg: ->
@@ -254,153 +279,3 @@ class Manager extends Disposable
       return false
     # mainFile.blah.tex -> mainFile.pdf
     return @latex.mainFile.replace(/\.([^\/]*)$/, '.pdf')
-
-  # prevWatcherClosed: (watcher, watchPath) ->
-  #   watchedPaths = watcher.getWatched()
-  #   if !( watchPath of watchedPaths)
-  #     # rootWatcher exists, but project dir has been changed
-  #     # and reset all suggestions and close watcher
-  #     @latex.provider.command.resetCommands()
-  #     @latex.provider.reference.resetRefItems()
-  #     @latex.provider.subFiles.resetFileItems()
-  #     @latex.provider.citation.resetBibItems()
-  #     watcher.close()
-  #     return true
-  #   else
-  #     return false
-  #
-  # watchRoot: ->
-  #   root = @rootDir()
-  #   return false if !root?
-  #   if !@rootWatcher? or @prevWatcherClosed(@rootWatcher,root)
-  #     @latex.logger.log.push {
-  #       type: status
-  #       text: "Watching project #{root} for changes"
-  #     }
-  #     watchFileExts = ['png','eps','jpeg','jpg','pdf','tex','bib']
-  #     if @latex.manager.config?.latex_ext?
-  #       watchFileExts.push @latex.manager.config.latex_ext...
-  #     @rootWatcher = chokidar.watch(root,{
-  #       ignored: ///(|[\/\\])\.(?!#{watchFileExts.join("|").replace(/\./g,'')})///g
-  #       })
-  #     @watched.push(root)
-  #     console.time('RootWatcher Init')
-  #     @rootWatcher.on('add',(fpath)=>
-  #       @watchActions(fpath,'add')
-  #       return)
-  #     @rootWatcher.on('ready',
-  #     () =>
-  #       @rootWatcher.on('change', (fpath,stats) =>
-  #         if @isTexFile(fpath)
-  #           if fpath == @latex.mainFile
-  #             # Update dependent files
-  #             @latex.texFiles = [ @latex.mainFile ]
-  #             @latex.bibFiles = []
-  #             @findDependentFiles(@latex.mainFile)
-  #           @watchActions(fpath)
-  #         return)
-  #       @rootWatcher.on('unlink',(fpath) =>
-  #         @watchActions(fpath,'unlink')
-  #         return)
-  #     )
-  #     console.timeEnd('RootWatcher Init')
-  #     return true
-  #
-  #   return false
-  #
-  # watchActions: (fpath,event) ->
-  #   # Push/Splice file suggestions on new file additions or removals
-  #   if event is 'add'
-  #     @latex.provider.subFiles.getFileItems(fpath)
-  #   else if event is 'unlink'
-  #     @latex.provider.subFiles. resetFileItems(fpath)
-  #     @latex.provider.reference.resetRefItems(fpath)
-  #   if @isTexFile(fpath)
-  #     # Push command and references suggestions
-  #     @latex.provider.command.getCommands(fpath)
-  #     @latex.provider.reference.getRefItems(fpath)
-  #
-  # findAll: ->
-  #   if !@findMain()
-  #     return false
-  #   if @disable_watcher or @watchRoot()
-  #     @latex.texFiles = [ @latex.mainFile ]
-  #     @latex.bibFiles = []
-  #     @findDependentFiles(@latex.mainFile)
-  #     if @disable_watcher
-  #       @watchActions(file,'add') for file in @latex.texFiles
-  #   return true
-  #
-  # findDependentFiles: (file) ->
-  #   content = fs.readFileSync file, 'utf-8'
-  #   baseDir = path.dirname(@latex.mainFile)
-  #
-  #   inputReg = /(?:\\(?:input|include|subfile)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/g
-  #   loop
-  #     result = inputReg.exec content
-  #     break if !result?
-  #     inputFile = result[1]
-  #     if path.extname(inputFile) is ''
-  #       inputFile += '.tex'
-  #     filePath = path.resolve(path.join(baseDir, inputFile))
-  #     if @latex.texFiles.indexOf(filePath) < 0 and fs.existsSync(filePath)
-  #       @latex.texFiles.push(filePath)
-  #       @findDependentFiles(filePath)
-  #
-  #   bibReg = /(?:\\(?:bibliography|addbibresource)(?:\[[^\[\]\{\}]*\])?){(.+?)}/g
-  #   loop
-  #     result = bibReg.exec content
-  #     break if !result?
-  #     bibs = result[1].split(',').map((bib) -> bib.trim())
-  #     @addBibToWatcher(bib) for bib in bibs
-  #
-  #   # Reset Citations
-  #   for fpath in @watched
-  #     # The race is on b/w this test and setting up bibWatcher, hence the first check
-  #     if fpath? and fpath not in @latex.bibFiles and !(fpath.indexOf('.bib') < 0)
-  #       # bib file removed, remove citation suggestions and unwatch
-  #       @latex.provider.citation.resetBibItems(fpath)
-  #       @bibWatcher.unwatch(fpath)
-  #       @watched.splice(@watched.indexOf(fpath),1)
-  #   return true
-  #
-  # addBibToWatcher: (bib) ->
-  #   if path.extname(bib) is ''
-  #     bib += '.bib'
-  #   bib = path.resolve(path.join(path.dirname(@latex.mainFile),bib))
-  #   if @latex.bibFiles.indexOf(bib) < 0
-  #     @latex.bibFiles.push(bib)
-  #   if @disable_watcher
-  #     @latex.provider.citation.getBibItems(bib)
-  #     return
-  #   # Init bibWatcher listeners
-  #   if !@bibWatcher? or @bibWatcher.closed
-  #     @bibWatcher = chokidar.watch(bib)
-  #     @watched.push(bib)
-  #     # @latex.logger.log.push {
-  #     #   type: status
-  #     #   text: "Watching bib file #{bib} for changes"
-  #     # }
-  #     # Register watcher callbacks
-  #     @bibWatcher.on('add', (fpath) =>
-  #       # bib file added, parse
-  #       @latex.provider.citation.getBibItems(fpath)
-  #       # @latex.logger.log.push {
-  #       #   type: status
-  #       #   text: "Added bib file #{fpath} to Watcher"
-  #       # }
-  #       return)
-  #     @bibWatcher.on('change', (fpath) =>
-  #       # bib file changed, reparse
-  #       @latex.provider.citation.getBibItems(fpath)
-  #       return)
-  #     @bibWatcher.on('unlink', (fpath) =>
-  #       # bib file deleted, remove citation suggestions and unwatch
-  #       @latex.provider.citation.resetBibItems(fpath)
-  #       @bibWatcher.unwatch(fpath)
-  #       @watched.splice(@watched.indexOf(fpath),1)
-  #       return)
-  #   else if bib not in @watched
-  #     # Process new unwatched bib file
-  #     @bibWatcher.add(bib)
-  #     @watched.push(bib)
