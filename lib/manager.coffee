@@ -3,6 +3,7 @@ fs = require 'fs'
 path = require 'path'
 chokidar = require 'chokidar'
 
+
 checkNested = (obj) ->
   args = Array::slice.call(arguments, 1)
   i = 0
@@ -44,6 +45,34 @@ incrementCounts = (counts, count, structure) ->
       break
   return counts
 
+mathify = (string) ->
+  mathReg = /\$([^$]*)\$/g
+  textttReg = /\\texttt{([^}]*)}/g
+  escapeReg = /\\([_{}])/g
+  subscriptRegex = /([^\\]?)_{?([^}])}?/g
+  supscriptRegex = /([^\\]?)\^{?([^}])}?/g
+  mboxReg = /\\mbox{([^}]*)}/g
+
+  string = string.replace(mathReg, '<i>$1</i>')
+  string = string.replace(textttReg, '$1')
+  string = string.replace(escapeReg, '$1')
+  string = string.replace(subscriptRegex, '$1<sub>$2</sub>')
+  string = string.replace(supscriptRegex, '$1<sup>$2</sup>')
+  string = string.replace(mboxReg, '$1')
+
+  mathchars = {
+    '\\\\geq':'&ge;',
+    '\\\\pounds':'&pound;',
+    '\\\\land':'&and;',
+    '\\\\lor':'&or',
+    '\`\`':'&quot;',
+    '\'\'':'&quot;',
+    '\\\\times':'&times'
+  }
+  for k, v of mathchars
+    string = string.replace(new RegExp(k, 'g'), v)
+  return string
+
 module.exports =
 class Manager extends Disposable
   constructor: (latex) ->
@@ -76,12 +105,12 @@ class Manager extends Disposable
       else
         break
     searchText = searchText.join("\n")
-    figureReg = /\\begin{(figure|table|algorithm)}(?:[\s\S]*?)(?:\\caption(?:\[([^\[\]\{\}]*)\])?){([^}]*)}(?:[\s\S]*?)\\end{\1}/g
+    figureReg = /\\begin{(figure|table|algorithm)}(?:[\s\S]*?)(?:\\caption(?:\[([^\[\]\{\}]*)\])?){([^{}]*({([^{}]*)})?[^{}]*)}(?:[\s\S]*?)\\end{\1}/g
 
     while (m = figureReg.exec(searchText))
         if m
           m.line = startLine + searchText.slice(0, m.index).split(/\r?\n/).length
-          m.title = if m[2] then m[2] else m[3]
+          m.title = mathify(if m[2] then m[2] else m[3])
           m.type = m[1]
           figures.push(m)
     return figures
@@ -126,31 +155,31 @@ class Manager extends Disposable
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] = if structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] then structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection] else {index: "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}-#{counts.subsubsection}"}
 
         if i[1] == 'part'
-          structure.parts[counts.part].title = i[2]
+          structure.parts[counts.part].title = mathify(i[2])
           structure.parts[counts.part].file = file
           structure.parts[counts.part].line = lineNo
           structure.parts[counts.part].index = "#{counts.part}"
           structure.parts[counts.part].figures = this.getFigures(text, lineNo)
         if i[1] == 'chapter'
-          structure.parts[counts.part].chapters[counts.chapter].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].title = mathify(i[2])
           structure.parts[counts.part].chapters[counts.chapter].file = file
           structure.parts[counts.part].chapters[counts.chapter].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].index = "#{counts.part}-#{counts.chapter}"
           structure.parts[counts.part].chapters[counts.chapter].figures = this.getFigures(text, lineNo)
         if i[1] == 'section'
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].title = mathify(i[2])
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].index = "#{counts.part}-#{counts.chapter}-#{counts.section}"
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].figures = this.getFigures(text, lineNo)
         if i[1] == 'subsection'
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].title = mathify(i[2])
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}"
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].figures = this.getFigures(text, lineNo)
         if i[1] == 'subsubsection'
-          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].title = i[2]
+          structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].title = mathify(i[2])
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].file = file
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].line = lineNo
           structure.parts[counts.part].chapters[counts.chapter].sections[counts.section].subsections[counts.subsection].subsubsections[counts.subsubsection].index = "#{counts.part}-#{counts.chapter}-#{counts.section}-#{counts.subsection}-#{counts.subsubsection}"
