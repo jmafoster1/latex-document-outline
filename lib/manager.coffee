@@ -2,6 +2,7 @@
 fs = require 'fs'
 path = require 'path'
 chokidar = require 'chokidar'
+mathchars = require './mathchars'
 
 
 checkNested = (obj) ->
@@ -13,6 +14,11 @@ checkNested = (obj) ->
     obj = obj[args[i]]
     i++
   true
+
+escapeRegExp = (string) ->
+  if string
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 
 incrementCounts = (counts, count, structure) ->
   counts[count] += 1
@@ -60,17 +66,9 @@ mathify = (string) ->
   string = string.replace(supscriptRegex, '$1<sup>$2</sup>')
   string = string.replace(mboxReg, '$1')
 
-  mathchars = {
-    '\\\\geq':'&ge;',
-    '\\\\pounds':'&pound;',
-    '\\\\land':'&and;',
-    '\\\\lor':'&or',
-    '\`\`':'&quot;',
-    '\'\'':'&quot;',
-    '\\\\times':'&times'
-  }
-  for k, v of mathchars
-    string = string.replace(new RegExp(k, 'g'), v)
+  mathcharsRegex = new RegExp('('+(Object.keys(mathchars).map (x) -> escapeRegExp(x)).join("|")+')', 'g')
+  while e=mathcharsRegex.exec(string)
+    string = string.replace(e[0], mathchars[e[0]])
   return string
 
 module.exports =
