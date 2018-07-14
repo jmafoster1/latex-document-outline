@@ -59,6 +59,10 @@ mathify = (string) ->
   supscriptRegex = /([^\\]?)\^{?([^}])}?/g
   mboxReg = /\\mbox{([^}]*)}/g
 
+  mathcharsRegex = new RegExp('('+(Object.keys(mathchars).map (x) -> escapeRegExp(x)).join("|")+')', 'g')
+  while e=mathcharsRegex.exec(string)
+    string = string.replace(e[0], mathchars[e[0]])
+
   string = string.replace(mathReg, '<i>$1</i>')
   string = string.replace(textttReg, '$1')
   string = string.replace(escapeReg, '$1')
@@ -66,9 +70,6 @@ mathify = (string) ->
   string = string.replace(supscriptRegex, '$1<sup>$2</sup>')
   string = string.replace(mboxReg, '$1')
 
-  mathcharsRegex = new RegExp('('+(Object.keys(mathchars).map (x) -> escapeRegExp(x)).join("|")+')', 'g')
-  while e=mathcharsRegex.exec(string)
-    string = string.replace(e[0], mathchars[e[0]])
   return string
 
 module.exports =
