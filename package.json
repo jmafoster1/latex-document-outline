@@ -1,7 +1,7 @@
 {
   "name": "latex-document-outline",
   "main": "./lib/latex-document-outline",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Displays an outline of latex documents",
   "keywords": [],
   "repository": "https://github.com/aca13jmf/latex-document-outline",
@@ -17,5 +17,7 @@
   "deserializers": {
     "latex-document-outline/LatexDocumentOutlineView": "deserializeLatexDocumentOutlineView"
   },
-  "styles" : ["latex-document-outline.lessadsfasdfasdf"]
+  "styles": [
+    "latex-document-outline.lessadsfasdfasdf"
+  ]
 }
