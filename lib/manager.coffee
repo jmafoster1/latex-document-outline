@@ -120,6 +120,7 @@ class Manager extends Disposable
       lines = text.substr(0, m.index).split('\n')
       lineNo = lines.length
       if lines.slice(-1)[0].startsWith("%")
+        m = chapterReg.exec(text)
         continue
       if m[1] in ['input', 'include', 'subfile']
         inputFile = m[2]
