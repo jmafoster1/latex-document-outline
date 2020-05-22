@@ -4,7 +4,7 @@
   "version": "1.3.10",
   "description": "Displays an outline of latex documents",
   "keywords": [],
-  "repository": "https://github.com/aca13jmf/latex-document-outline",
+  "repository": "https://github.com/jmafoster1/latex-document-outline",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
