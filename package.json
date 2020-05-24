@@ -12,7 +12,8 @@
   "dependencies": {
     "chokidar": "^2.0.1",
     "fs": "0.0.1-security",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "lodash": "4.17.15"
   },
   "deserializers": {
     "latex-document-outline/LatexDocumentOutlineView": "deserializeLatexDocumentOutlineView"
