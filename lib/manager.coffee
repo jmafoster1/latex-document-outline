@@ -95,7 +95,7 @@ class Manager extends Disposable
       return atom.project.getPaths()[0]
 
   getFigures: (text, startLine) ->
-    chapterReg = /(?:\\(part|chapter|section|subsection|subsubsection)(?:\[[^\[\]\{\}]*\])?){([^}]*)}/
+    chapterReg = /(?:\\(part|chapter|section|subsection|subsubsection)\*?(?:\[[^\[\]\{\}]*\])?){([^}]*)}/
     figures = []
     searchText = []
     for line, lineNo in text.split(/\r?\n/).slice(startLine)
